@@ -32,14 +32,12 @@ printOutput s = do
 
 check :: String -> IO ()
 check [] = tryDownload 
---check [] = putStrLn "Download functionality not implemented yet!"
 check x  = do 
     downloaded <- readFile $ dwFILE ++ ".dw"
     schedulled <- readFile dwFILE
     let dwn = checkDownloaded x $ lines downloaded
         sch = checkSchedulled x $ lines schedulled
     if dwn || sch then 
---        putStrLn "URL already downloaded or schedulled!"
         printOutput "URL already downloaded or schedulled!"
     else
         appendSched x
@@ -68,22 +66,20 @@ tryDownload = do
         rs = (\(_, y, z) -> y ++ z ) result
 
     if ec /= ExitSuccess then 
-      exitProgram ec rs 
+      exitProgram ec rs itm lst
     else 
---      putStrLn rs
       printOutput rs
 
     removeUrl itm lst
     appendDW itm
---    getLine
---    putStrLn "EOP"
 
-exitProgram :: ExitCode -> String -> IO ()
-exitProgram e r = do
+exitProgram :: ExitCode -> String -> String -> [String] -> IO ()
+exitProgram e r u l = do
     putStrLn $ show e
 --    putStrLn r
     printOutput r
---    removeUrl i l
+    appendFail u
+    removeUrl u l
     exitFailure
 
 removeUrl :: String -> [String]-> IO ()
@@ -108,8 +104,10 @@ appendSched url = do
 
 
 appendDW :: String -> IO ()
---appendDW url = appendFile ( dwFILE ++ ".dw" ) ( url ++ "\n" )
 appendDW url = appendToFile ( dwFILE ++ ".dw" ) url 
+
+appendFail :: String -> IO ()
+appendFail url = appendToFile (dwFILE ++ ".fail") url
 
 appendToFile :: String -> String -> IO ()
 appendToFile file url = appendFile file ( url ++ "\n" ) 
