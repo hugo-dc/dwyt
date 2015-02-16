@@ -70,6 +70,8 @@ tryDownload = do
     else 
       printOutput rs
 
+    putStrLn $ show itm 
+
     removeUrl itm lst
     appendDW itm
 
