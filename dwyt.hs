@@ -50,11 +50,14 @@ checkSchedulled x y = x `elem` y
 
 tryDownload :: IO ()
 tryDownload = do 
-    putStrLn "Trying to download..."
-    -- getDownload File
     dwlist <- readFile dwFILE
 
-    putStrLn $ getFirst $ lines dwlist
+    if length dwlist == 0 then
+        emptyList 
+    else
+        putStrLn $ "Url: " ++ ( getFirst $ lines dwlist )
+    putStrLn "Trying to download..."
+
     -- getFirst item in list
     let lst = lines dwlist
         itm = getFirst lst 
@@ -82,6 +85,11 @@ exitProgram e r u l = do
     printOutput r
     appendFail u
     removeUrl u l
+    exitFailure
+
+emptyList :: IO ()
+emptyList = do 
+    printOutput "Download list is empty!"
     exitFailure
 
 removeUrl :: String -> [String]-> IO ()
