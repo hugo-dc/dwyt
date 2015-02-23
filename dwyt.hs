@@ -7,6 +7,7 @@ import System.IO
 import System.Directory
 import Data.List
 import System.Exit
+import System.Random
 
 dwFILE :: String
 dwFILE = "dwyt.lst"
@@ -24,10 +25,19 @@ getFirst :: [String] -> String
 getFirst [] = "" 
 getFirst (x:_) = x
 
+getRandom :: [String] -> IO String
+getRandom [] = return ""
+getRandom xs = do 
+                g <- newStdGen
+                let (r,_) = randomR(1, length xs) g 
+                    s      = xs !! ( r + 1 )
+                return s
+
+
 printOutput :: String -> IO ()
 printOutput s = do 
                 putStrLn s
-                getLine
+                _ <- getLine
                 putStrLn ""
 
 check :: String -> IO ()
@@ -51,16 +61,17 @@ checkSchedulled x y = x `elem` y
 tryDownload :: IO ()
 tryDownload = do 
     dwlist <- readFile dwFILE
+    itm <- getRandom $ lines dwlist
 
-    if length dwlist == 0 then
+    if null dwlist then
         emptyList 
     else
-        putStrLn $ "Url: " ++ ( getFirst $ lines dwlist )
-    putStrLn "Trying to download..."
+        --putStrLn $ "Url: " ++ ( getFirst $ lines dwlist )
+        putStrLn $ "Url: " ++ itm
+    putStrLn "Downloading..."
 
     -- getFirst item in list
     let lst = lines dwlist
-        itm = getFirst lst 
         pr = readProcessWithExitCode "youtube-dl" [itm] []
 
     result <- pr
@@ -73,14 +84,16 @@ tryDownload = do
     else 
       printOutput rs
 
-    putStrLn $ show itm 
+    --putStrLn $ show itm 
+    print itm
 
     removeUrl itm lst
     appendDW itm
 
 exitProgram :: ExitCode -> String -> String -> [String] -> IO ()
 exitProgram e r u l = do
-    putStrLn $ show e
+    --putStrLn $ show e
+    print e
 --    putStrLn r
     printOutput r
     appendFail u
@@ -114,10 +127,12 @@ appendSched url = do
 
 
 appendDW :: String -> IO ()
-appendDW url = appendToFile ( dwFILE ++ ".dw" ) url 
+--appendDW url = appendToFile ( dwFILE ++ ".dw" ) url 
+appendDW = appendToFile ( dwFILE ++ ".dw" ) 
 
 appendFail :: String -> IO ()
-appendFail url = appendToFile (dwFILE ++ ".fail") url
+--appendFail url = appendToFile (dwFILE ++ ".fail") url
+appendFail = appendToFile (dwFILE ++ ".fail") 
 
 appendToFile :: String -> String -> IO ()
 appendToFile file url = appendFile file ( url ++ "\n" ) 
