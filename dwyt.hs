@@ -1,4 +1,4 @@
--- Youtube Downloader scheduller
+-- Download YT Videos
 import System.Environment
 import System.Process
 import GHC.IO.Exception
@@ -30,7 +30,7 @@ getRandom [] = return ""
 getRandom xs = do 
                 g <- newStdGen
                 let (r,_) = randomR(1, length xs) g 
-                    s      = xs !! ( r + 1 )
+                    s      = xs !! ( r - 1 )
                 return s
 
 
@@ -66,11 +66,9 @@ tryDownload = do
     if null dwlist then
         emptyList 
     else
-        --putStrLn $ "Url: " ++ ( getFirst $ lines dwlist )
         putStrLn $ "Url: " ++ itm
     putStrLn "Downloading..."
 
-    -- getFirst item in list
     let lst = lines dwlist
         pr = readProcessWithExitCode "youtube-dl" [itm] []
 
@@ -84,7 +82,6 @@ tryDownload = do
     else 
       printOutput rs
 
-    --putStrLn $ show itm 
     print itm
 
     removeUrl itm lst
@@ -92,9 +89,7 @@ tryDownload = do
 
 exitProgram :: ExitCode -> String -> String -> [String] -> IO ()
 exitProgram e r u l = do
-    --putStrLn $ show e
     print e
---    putStrLn r
     printOutput r
     appendFail u
     removeUrl u l
@@ -127,11 +122,9 @@ appendSched url = do
 
 
 appendDW :: String -> IO ()
---appendDW url = appendToFile ( dwFILE ++ ".dw" ) url 
 appendDW = appendToFile ( dwFILE ++ ".dw" ) 
 
 appendFail :: String -> IO ()
---appendFail url = appendToFile (dwFILE ++ ".fail") url
 appendFail = appendToFile (dwFILE ++ ".fail") 
 
 appendToFile :: String -> String -> IO ()
