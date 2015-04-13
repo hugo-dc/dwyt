@@ -9,9 +9,8 @@ import Data.List
 import System.Exit
 import System.Random
 
-dwFILE :: String
-dwFILE = "dwyt.lst"
 
+-- | Main Program
 main :: IO ()
 main = do
     args   <- getArgs
@@ -20,11 +19,16 @@ main = do
     else
         check $ getFirst args
 
+-- | Download list file
+dwFILE :: String
+dwFILE = "dwyt.lst"
 
+-- | Get First Parameter
 getFirst :: [String] -> String 
 getFirst [] = "" 
 getFirst (x:_) = x
 
+-- | Get Random URL from Download List
 getRandom :: [String] -> IO String
 getRandom [] = return ""
 getRandom xs = do 
@@ -33,31 +37,28 @@ getRandom xs = do
                     s      = xs !! ( r - 1 )
                 return s
 
-
+-- | Print output and wait for user input
 printOutput :: String -> IO ()
 printOutput s = do 
                 putStrLn s
                 _ <- getLine
                 putStrLn ""
 
+-- | Check if URL has been downloaded
+-- | Or is already schedulled
 check :: String -> IO ()
 check [] = tryDownload 
 check x  = do 
     downloaded <- readFile $ dwFILE ++ ".dw"
     schedulled <- readFile dwFILE
-    let dwn = checkDownloaded x $ lines downloaded
-        sch = checkSchedulled x $ lines schedulled
-    if dwn || sch then 
+
+    if x `elem` ( lines downloaded) || 
+       x `elem` ( lines schedulled) then
         printOutput "URL already downloaded or schedulled!"
     else
         appendSched x
 
-checkDownloaded :: String -> [String] -> Bool
-checkDownloaded x y = x `elem` y 
-
-checkSchedulled :: String -> [String] -> Bool
-checkSchedulled x y = x `elem` y
-
+-- | Try to download a random URL
 tryDownload :: IO ()
 tryDownload = do 
     dwlist <- readFile dwFILE
@@ -87,6 +88,7 @@ tryDownload = do
     removeUrl itm lst
     appendDW itm
 
+-- | Print error in command execution and exit program immediately
 exitProgram :: ExitCode -> String -> String -> [String] -> IO ()
 exitProgram e r u l = do
     print e
@@ -95,11 +97,13 @@ exitProgram e r u l = do
     removeUrl u l
     exitFailure
 
+-- | Inform that Download list is empty and stop the program
 emptyList :: IO ()
 emptyList = do 
     printOutput "Download list is empty!"
     exitFailure
 
+-- | Remove Url from download list
 removeUrl :: String -> [String]-> IO ()
 removeUrl url urls = do
   let new  = delete url urls
@@ -113,20 +117,21 @@ removeUrl url urls = do
       removeFile dwFILE
       renameFile tempName dwFILE)
       
-      
-
+-- | Add new URL in download list
 appendSched :: String -> IO () 
 appendSched url = do 
     appendFile dwFILE ( url ++ "\n" )
     printOutput $ "Url " ++ url ++ " added!"   
 
-
+-- | Add new URL to the already downloaded videos list
 appendDW :: String -> IO ()
 appendDW = appendToFile ( dwFILE ++ ".dw" ) 
 
+-- | Save URL in the failed downloads list
 appendFail :: String -> IO ()
 appendFail = appendToFile (dwFILE ++ ".fail") 
 
+-- | Save data into file
 appendToFile :: String -> String -> IO ()
 appendToFile file url = appendFile file ( url ++ "\n" ) 
 
