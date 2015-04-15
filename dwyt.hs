@@ -14,10 +14,10 @@ import System.Random
 main :: IO ()
 main = do
     args   <- getArgs
-    if length args  > 1 then 
-        putStrLn "Usage:\n\tdwyt <url>"
-    else
-        check $ getFirst args
+    case args of
+        []     -> tryDownload
+        (x:[]) -> sched x 
+        _      -> putStrLn "Usage:\n\tdwyt <url>"
 
 -- | Download list file
 dwFILE :: String
@@ -46,9 +46,9 @@ printOutput s = do
 
 -- | Check if URL has been downloaded
 -- | Or is already schedulled
-check :: String -> IO ()
-check [] = tryDownload 
-check x  = do 
+-- | If not, save url to be downloaded
+sched :: String -> IO ()
+sched x  = do 
     downloaded <- readFile $ dwFILE ++ ".dw"
     schedulled <- readFile dwFILE
 
