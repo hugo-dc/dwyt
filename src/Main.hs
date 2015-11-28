@@ -134,5 +134,3 @@ appendFail = appendToFile (dwFILE ++ ".fail")
 -- | Save data into file
 appendToFile :: String -> String -> IO ()
 appendToFile file url = appendFile file ( url ++ "\n" ) 
-
-
