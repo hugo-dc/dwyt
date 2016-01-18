@@ -20,4 +20,5 @@ executable dwyt
                      , directory >= 1.2.2.0
                      , process >= 1.2.3.0
                      , random
+                     , filepath
                        

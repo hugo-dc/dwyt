@@ -8,20 +8,24 @@ import System.Directory
 import Data.List
 import System.Exit
 import System.Random
+import System.FilePath.Windows (pathSeparator)
 
 
 -- | Main Program
 main :: IO ()
 main = do
-    args   <- getArgs
-    case args of
-        []     -> tryDownload
-        (x:[]) -> sched x 
-        _      -> putStrLn "Usage:\n\tdwyt <url>"
+  args   <- getArgs
+  case args of
+    []     -> tryDownload
+    (x:[]) -> sched x 
+    _      -> putStrLn "Usage:\n\tdwyt <url>"
 
 -- | Download list file
-dwFILE :: String
-dwFILE = "dwyt.lst"
+dwFILE :: IO String
+dwFILE = do
+  home <- getHomeDirectory
+--  putStrLn home
+  return $ home ++ [pathSeparator] ++ "dwyt.lst"
 
 -- | Get First Parameter
 getFirst :: [String] -> String 
@@ -31,27 +35,41 @@ getFirst (x:_) = x
 -- | Get Random URL from Download List
 getRandom :: [String] -> IO String
 getRandom [] = return ""
-getRandom xs = do 
-                g <- newStdGen
-                let (r,_) = randomR(1, length xs) g 
-                    s      = xs !! ( r - 1 )
-                return s
+getRandom xs = do
+  g <- newStdGen
+  let (r,_) = randomR(1, length xs) g 
+  let s     = xs !! ( r - 1 )
+  return s
 
 -- | Print output and wait for user input
 printOutput :: String -> IO ()
-printOutput s = do 
-                putStrLn s
-                _ <- getLine
-                putStrLn ""
+printOutput s = do
+  putStrLn s
+  _ <- getLine
+  putStrLn ""
 
+-- | Check if file exists
+-- | if not, creates empty file
+testFile :: String -> IO ()
+testFile fname = do
+  fex <- doesFileExist fname
+  if not fex then
+    appendFile fname ""
+  else return ()
+  
 -- | Check if URL has been downloaded
 -- | Or is already schedulled
 -- | If not, save url to be downloaded
 sched :: String -> IO ()
-sched x  = do 
-    downloaded <- readFile $ dwFILE ++ ".dw"
-    schedulled <- readFile dwFILE
+sched x  = do
+  dwf <- dwFILE
+  testFile (dwf ++ ".dw")
+  downloaded <- readFile $ dwf ++ ".dw"
 
+  if null downloaded then
+    appendSched x
+  else do
+    schedulled <- readFile dwf
     if x `elem` ( lines downloaded) || 
        x `elem` ( lines schedulled) then
         printOutput "URL already downloaded or schedulled!"
@@ -60,42 +78,42 @@ sched x  = do
 
 -- | Try to download a random URL
 tryDownload :: IO ()
-tryDownload = do 
-    dwlist <- readFile dwFILE
-    itm <- getRandom $ lines dwlist
+tryDownload = do
+  dwf <- dwFILE
+  testFile dwf
+  dwlist <- readFile dwf
+  itm <- getRandom $ lines dwlist
 
-    if null dwlist then
-        emptyList 
-    else
-        putStrLn $ "Url: " ++ itm
-    putStrLn "Downloading..."
+  if null dwlist then
+      emptyList 
+  else
+      putStrLn $ "Url: " ++ itm
+  putStrLn "Downloading..."
 
-    let lst = lines dwlist
-        pr = readProcessWithExitCode "youtube-dl" [itm] []
+  let lst = lines dwlist
+      pr = readProcessWithExitCode "youtube-dl" [itm] []
 
-    result <- pr
+  result <- pr
 
-    let ec = (\(x, _, _) -> x ) result
-        rs = (\(_, y, z) -> y ++ z ) result
+  let ec = (\(x, _, _) -> x ) result
+      rs = (\(_, y, z) -> y ++ z ) result
 
-    if ec /= ExitSuccess then 
-      exitProgram ec rs itm lst
-    else 
-      printOutput rs
-
-    print itm
-
-    removeUrl itm lst
-    appendDW itm
+  if ec /= ExitSuccess then 
+    exitProgram ec rs itm lst
+  else 
+    printOutput rs
+  print itm
+  removeUrl itm lst
+  appendDW itm
 
 -- | Print error in command execution and exit program immediately
 exitProgram :: ExitCode -> String -> String -> [String] -> IO ()
 exitProgram e r u l = do
-    print e
-    printOutput r
-    appendFail u
-    removeUrl u l
-    exitFailure
+  print e
+  printOutput r
+  appendFail u
+  removeUrl u l
+  exitFailure
 
 -- | Inform that Download list is empty and stop the program
 emptyList :: IO ()
@@ -114,22 +132,29 @@ removeUrl url urls = do
     (\(tempName, tempHandle) -> do 
       hPutStr tempHandle $ unlines new
       hClose tempHandle
-      removeFile dwFILE
-      renameFile tempName dwFILE)
+      dwf <- dwFILE
+      removeFile dwf
+      renameFile tempName dwf)
       
 -- | Add new URL in download list
 appendSched :: String -> IO () 
-appendSched url = do 
-    appendFile dwFILE ( url ++ "\n" )
-    printOutput $ "Url " ++ url ++ " added!"   
+appendSched url = do
+  dwf <- dwFILE
+  appendFile dwf ( url ++ "\n" )
+  printOutput $ "Url " ++ url ++ " added!"   
 
 -- | Add new URL to the already downloaded videos list
 appendDW :: String -> IO ()
-appendDW = appendToFile ( dwFILE ++ ".dw" ) 
+appendDW dw = do
+  dwf <- dwFILE
+  testFile dwf
+  appendToFile ( dwf ++ ".dw" ) dw
 
 -- | Save URL in the failed downloads list
 appendFail :: String -> IO ()
-appendFail = appendToFile (dwFILE ++ ".fail") 
+appendFail fail = do
+  dwf <- dwFILE
+  appendToFile (dwf ++ ".fail") (fail++ "\n") 
 
 -- | Save data into file
 appendToFile :: String -> String -> IO ()
