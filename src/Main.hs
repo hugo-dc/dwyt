@@ -8,7 +8,8 @@ import System.Directory
 import Data.List
 import System.Exit
 import System.Random
-import System.FilePath.Windows (pathSeparator)
+import System.Info (os)
+--import System.FilePath.Windows (pathSeparator)
 
 
 -- | Main Program
@@ -20,12 +21,17 @@ main = do
     (x:[]) -> sched x 
     _      -> putStrLn "Usage:\n\tdwyt <url>"
 
+-- | Get path separator depending on OS
+getSeparator :: Char
+getSeparator | os == "windows" = '\\'
+             | otherwise       = '/'
+  
 -- | Download list file
 dwFILE :: IO String
 dwFILE = do
   home <- getHomeDirectory
 --  putStrLn home
-  return $ home ++ [pathSeparator] ++ "dwyt.lst"
+  return $ home ++ [getSeparator] ++ "dwyt.lst"
 
 -- | Get First Parameter
 getFirst :: [String] -> String 
